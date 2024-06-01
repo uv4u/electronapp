@@ -254,6 +254,8 @@ const App = () => {
     }
   };
 
+  let p;
+
   return (
     <div>
       <nav className="navbar" style={{ background: "#3559E0", height: 58 }}>
@@ -388,32 +390,45 @@ const App = () => {
                   type="text"
                   className="form-control input1"
                   id="apkPath"
-                  placeholder="Enter the Path"
+                  placeholder="Select Path"
                   style={{ width: "50%" }}
-                  value={apkPath}
-                  onChange={(e) => {
-                    setApkPath(e.target.value);
-                    console.log(e.target.value);
-                    // try {
-                    //   const { ipcRenderer } = window.require("electron");
-                    //   const buttonCreated = document.getElementById("apkPath");
+                  onClick={() => {
+                    // setApkPath(e.target.value);
 
-                    //   buttonCreated.addEventListener("click", function (e) {
-                    //     ipcRenderer.send("open-file-dialog-for-file");
-                    //     console.log("Hello");
-                    //   });
-                    //   ipcRenderer.on("selected-file", function (e, path) {
-                    //     console.log("Full path: ", path);
-                    //   });
-                    // } catch (error) {
-                    //   console.log(error);
-                    // }
+                    ///////////////////////////////////////////////////////////////
+                    // notify("Hello from App");
+                    console.log(window.ipcRenderer);
+                    // console.log(event);
+                    window.ipcRenderer.send("open-file-dialog-for-file");
+
+                    window.ipcRenderer.on(
+                      "selected-file",
+                      function (event, path) {
+                        console.log("Full path: ", path);
+                        setApkPath(path);
+                        console.log(typeof path);
+                      }
+                    );
                   }}
+                  value={apkPath}
                 />
                 <button
                   className={`button-10 ${!apkPath.trim() ? "" : "valid"}`}
                   type="submit"
                   disabled={!apkPath.trim()}
+                  // onClick={() => {
+                  //   // notify("Hello from App");
+                  //   // console.log(window.ipcRenderer);
+                  //   // // console.log(event);
+                  //   // window.ipcRenderer.send("open-file-dialog-for-file");
+                  //   // window.ipcRenderer.on(
+                  //   //   "selected-file",
+                  //   //   function (event, path) {
+                  //   //     console.log("Full path: ", path);
+                  //   //   }
+                  //   // );
+                  //   // setApkPath("");
+                  // }}
                 >
                   <span className={`button-content-10`}>Install APK</span>
                 </button>

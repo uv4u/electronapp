@@ -15,7 +15,7 @@ const server = require("http").createServer(app);
 const io = socketIo(server);
 ////////////////////////////////////
 
-console.log("hello");
+// console.log("hello");
 
 app.use(bodyParser.json());
 const corsOpts = {
