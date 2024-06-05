@@ -1,8 +1,8 @@
 {
   "name": "AndroDebug",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "A solution to detect bugs",
-  "author": "Utsav-Kumar",
+  "author": "Utsav",
   "build": {
     "appId": "react.electron.androdebug",
     "win": {

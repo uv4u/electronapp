@@ -46,7 +46,7 @@ async function getGroqChatCompletion(logs) {
 
 const App = () => {
   const [apkPath, setApkPath] = useState("");
-  const [deviceId, setDeviceId] = useState("");
+  const [deviceId, setDeviceId] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -59,6 +59,7 @@ const App = () => {
   const [isLoading, setIsloading] = React.useState(false);
   const [scroll, setScroll] = React.useState("paper");
   const [analysedLog, setAnalysedLog] = useState("working on it...");
+  const [disconnectId, setDisconnectId] = useState("");
 
   const notify = (req) => toast(req);
 
@@ -68,7 +69,10 @@ const App = () => {
       // console.log(event);
 
       const eventData = JSON.parse(event.data);
+      console.log(eventData.deviceID);
       setDeviceId(eventData.deviceID);
+
+      // setDeviceId(eventData);
     };
 
     // Open SSE connection
@@ -239,7 +243,10 @@ const App = () => {
   //Disconnecting STB
   const handleDisconnect = async () => {
     try {
-      const response = await axios.post("http://localhost:3001/disconnect");
+      const response = await axios.post("http://localhost:3001/disconnect", {
+        ipAddress: disconnectId,
+        port: 5555, // Convert port to integer
+      });
       if (response.status >= 200 && response.status < 300) {
         notify("Device disconnected successfully");
       } else {
@@ -254,7 +261,39 @@ const App = () => {
     }
   };
 
-  let p;
+  const handleScreenCap = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/screencap",
+        {
+          ipAddress: disconnectId,
+        },
+        {
+          responseType: "blob",
+        }
+      );
+
+      console.log(response);
+      if (response.statusText !== "OK") {
+        console.log(response);
+        throw new Error("Network response was not ok");
+      }
+
+      const blob = new Blob([response.data], { type: "image/png" });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "screenshot.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  };
 
   return (
     <div>
@@ -301,7 +340,8 @@ const App = () => {
         >
           <div className="card-body" style={{ padding: 60 }}>
             <div className="jumbotron">
-              {!deviceId && (
+              {/* {!deviceId && ( */}
+              {1 && (
                 <div className="IP">
                   <h6>Connect to Device</h6>
                   <div
@@ -312,6 +352,7 @@ const App = () => {
                       <input
                         type="text"
                         className="form-control input1"
+                        name="ipAddress"
                         // style={{ width: "50%" }}
                         value={ipAddress}
                         placeholder="Enter IP address"
@@ -323,6 +364,7 @@ const App = () => {
                         type="text"
                         className="form-control input1"
                         // style={{ width: "25%" }}
+                        name="port"
                         value={port}
                         placeholder="Enter port (i.e. 5555)"
                         onChange={(e) => setPort(e.target.value)}
@@ -352,35 +394,46 @@ const App = () => {
 
                   {deviceId ? (
                     <div
-                      className="d-flex align-items-center"
+                      className="d-flex align-content-center"
                       style={{ gap: 20 }}
                       readOnly
                     >
-                      {/* <div>{"deviceId"}</div> */}
-                      <div>
-                        <input
-                          type="text"
-                          className="form-control input1"
-                          value={deviceId}
-                        />
-                      </div>
-                      <div>
-                        {!(deviceId.indexOf(":") === -1) && (
-                          <button
-                            className="button-10"
-                            onClick={handleDisconnect}
-                          >
-                            <span className="button-content-10">
-                              Disconnect
+                      <div className="d-flex">
+                        {deviceId.map((item, index) => (
+                          <div className="d-flex flex-wrap" key={index}>
+                            <div class="input-group">
+                              <input
+                                class="form-check-input mt-0"
+                                name="devices"
+                                type="radio"
+                                value={item.id}
+                                style={{ height: 12, width: 12 }}
+                                onChange={(e) =>
+                                  setDisconnectId(e.target.value)
+                                }
+                              />
+                            </div>
+                            {item.id}
+                            <span
+                              style={{ color: "#34ff4a", padding: "0 5px" }}
+                            >
+                              ●
                             </span>
-                          </button>
-                        )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : (
                     <h6>No device connected</h6>
                   )}
                 </div>
+                <button
+                  className="button-10"
+                  style={{ width: "14%", margin: "5px" }}
+                  onClick={handleDisconnect}
+                >
+                  <span className="button-content-10">Disconnect</span>
+                </button>
               </div>
               <label htmlFor="apkPath" className="form-label">
                 <h6>APK Path:</h6>
@@ -388,6 +441,8 @@ const App = () => {
               <div className="d-flex align-items-center" style={{ gap: 24 }}>
                 <input
                   type="text"
+                  name="apkPath"
+                  autoComplete="on"
                   className="form-control input1"
                   id="apkPath"
                   placeholder="Select Path"
@@ -493,6 +548,10 @@ const App = () => {
                 disabled={!logs.length}
               >
                 <span className="button-content-10">Save Logs</span>
+              </button>
+
+              <button className={`button-10`} onClick={handleScreenCap}>
+                <span className="button-content-10">Screenshot</span>
               </button>
 
               {/* /////////////MODAL//////////// */}
