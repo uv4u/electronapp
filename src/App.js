@@ -323,7 +323,7 @@ const App = () => {
       <nav className="navbar" style={{ background: "#3559E0", height: 58 }}>
         <div className="container-fluid">
           <span
-            className="navbar-brand h1"
+            className="navbar-fixed-top navbar-brand h1"
             style={{ color: "#EEEDEB", fontFamily: "Apple Color Emoji" }}
           >
             <img
@@ -463,7 +463,7 @@ const App = () => {
                                   }}
                                 />
                                 <button
-                                  className="btn btn-primary"
+                                  className="button-10"
                                   onClick={() => {
                                     window.ipcRenderer.send(
                                       "run-adb-pair",
@@ -479,7 +479,9 @@ const App = () => {
                                     );
                                   }}
                                 >
-                                  Submit
+                                  <span className="button-content-10">
+                                    Submit
+                                  </span>
                                 </button>
                               </form>
                             </DialogContentText>

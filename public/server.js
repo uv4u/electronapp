@@ -185,6 +185,17 @@ app.get("/device-logs", async (req, res) => {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function getFileName(fullPath) {
+  // Replace all backslashes with forward slashes to handle escaping issues
+  fullPath = fullPath.replace(/\\/g, "/");
+
+  // Split the string by the forward slash and get the last part
+  const parts = fullPath.split("/");
+  const fileName = parts[parts.length - 1];
+
+  return fileName;
+}
+
 //INSTALL PART
 app.get("/install-apk", async (req, res) => {
   try {
@@ -195,12 +206,14 @@ app.get("/install-apk", async (req, res) => {
       return;
     }
     const apk = req.query.apkPath;
+    const file_name = getFileName(apk);
+
     for (let i = 0; i < devices.length; i++) {
       console.log(devices[i].id);
       await client.install(devices[i].id, apk);
-      console.log(`Installed ${apk} on device ${devices[i].id}`);
+      console.log(`Installed ${file_name} on device ${devices[i].id}`);
     }
-    res.send(`Installed ${apk} on all devices`);
+    res.send(`Installed ${file_name} Successfully`);
   } catch (err) {
     console.error("Lost Connection with Device", err.stack);
     res.status(500).json({ error: "Lost Connection with Device" });
