@@ -1,7 +1,7 @@
 const electron = require("electron");
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-const { spawn } = require("child_process");
+const { spawn, exec } = require("child_process");
 const path = require("path");
 const isDev = require("electron-is-dev");
 const dialog = require("electron").dialog;
@@ -9,22 +9,6 @@ let mainWindow;
 const server = require("./server");
 const ipcMain = require("electron").ipcMain;
 console.log(ipcMain);
-
-// [1]        '-ipc-message': [Function (anonymous)],
-// [1]       '-ipc-invoke': [Function (anonymous)],
-// [1]       '-ipc-message-sync': [Function (anonymous)],
-// [1]       '-ipc-ports': [Function (anonymous)],
-// [1]       crashed: [Function (anonymous)],
-// [1]       'render-process-gone': [Function (anonymous)],
-// [1]       'devtools-reload-page': [Function (anonymous)],
-// [1]       '-new-window': [Function (anonymous)],
-// [1]       '-will-add-new-contents': [Function (anonymous)],
-// [1]       '-add-new-contents': [Function (anonymous)],
-// [1]       login: [Function (anonymous)],
-// [1]       'ready-to-show': [Function (anonymous)],
-// [1]       'select-bluetooth-device': [Function (anonymous)]
-// [1]     },
-// [1]     _eventsCount: 13
 
 ipcMain.on("open-file-dialog-for-file", (event) => {
   // Handle potential errors gracefully
@@ -52,6 +36,26 @@ ipcMain.on("open-file-dialog-for-file", (event) => {
     console.error("Unexpected error:", error);
     // Handle unexpected errors appropriately
   }
+});
+
+ipcMain.on("run-adb-pair", (event, ipPort, password) => {
+  const command = `adb pair ${ipPort}`;
+  const adbProcess = exec(command);
+
+  adbProcess.stdout.on("data", (data) => {
+    if (data.includes("Enter pairing code")) {
+      adbProcess.stdin.write(`${password}\n`);
+    }
+  });
+
+  adbProcess.stderr.on("data", (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  adbProcess.on("close", (code) => {
+    console.log(`child process exited with code ${code}`);
+    event.sender.send("adb-pair-result", code === 0 ? "Success" : "Failed");
+  });
 });
 
 function createWindow() {

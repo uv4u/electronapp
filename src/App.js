@@ -16,6 +16,8 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
 
 const Groq = require("groq-sdk");
 const groq = new Groq({
@@ -54,12 +56,16 @@ const App = () => {
   const [ipAddress, setIpAddress] = useState("");
   const [port, setPort] = useState("");
   const [connectedDevice, setConnectedDevice] = useState(null);
+  const [openNew, setOpenNew] = useState(false);
   // const [open, setOpen] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsloading] = React.useState(false);
   const [scroll, setScroll] = React.useState("paper");
   const [analysedLog, setAnalysedLog] = useState("working on it...");
   const [disconnectId, setDisconnectId] = useState("");
+  const [ipPort, setIpPort] = useState("");
+  const [password, setPassword] = useState("");
+  const [openIcon, setOpenIcon] = useState(false);
 
   const notify = (req) => toast(req);
 
@@ -261,6 +267,19 @@ const App = () => {
     }
   };
 
+  const handleCloseNew = async () => {
+    setOpenNew(false);
+  };
+
+  const handleClickOpenNew = (scrollType) => () => {
+    setOpenNew(true);
+    setScroll(scrollType);
+  };
+
+  const handleClickOpenIcon = () => {
+    setOpenIcon(true);
+  };
+
   const handleScreenCap = async () => {
     try {
       const response = await axios.post(
@@ -293,6 +312,10 @@ const App = () => {
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
     }
+  };
+
+  const handleCloseIcon = () => {
+    setOpenIcon(false);
   };
 
   return (
@@ -329,7 +352,7 @@ const App = () => {
           ></lottie-player>
         </div>
         <div
-          className="flex-grow-1 ms-3 container-sm card text-white mb-3"
+          className="flex-grow-1 ms-4 card text-white mb-3"
           style={{
             padding: 0,
             borderRadius: 80,
@@ -340,50 +363,145 @@ const App = () => {
         >
           <div className="card-body" style={{ padding: 60 }}>
             <div className="jumbotron">
-              {/* {!deviceId && ( */}
-              {1 && (
-                <div className="IP">
-                  <h6>Connect to Device</h6>
-                  <div
-                    className="d-flex align-items-center"
-                    style={{ gap: 20 }}
-                  >
-                    <div>
-                      <input
-                        type="text"
-                        className="form-control input1"
-                        name="ipAddress"
-                        // style={{ width: "50%" }}
-                        value={ipAddress}
-                        placeholder="Enter IP address"
-                        onChange={(e) => setIpAddress(e.target.value)}
-                      />
+              <div className="d-flex">
+                {1 && (
+                  <div className="IP">
+                    <h6>Connect to Device</h6>
+                    <div
+                      className="d-flex align-items-center"
+                      style={{ gap: 20 }}
+                    >
+                      <div>
+                        <input
+                          type="text"
+                          className="form-control input1"
+                          name="ipAddress"
+                          // style={{ width: "50%" }}
+                          value={ipAddress}
+                          placeholder="Enter IP address"
+                          onChange={(e) => setIpAddress(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          className="form-control input1"
+                          // style={{ width: "25%" }}
+                          name="port"
+                          value={port}
+                          placeholder="Enter port (i.e. 5555)"
+                          onChange={(e) => setPort(e.target.value)}
+                        />
+                      </div>
+                      <div className="pair-device-modal d-flex flex-row-reverse">
+                        {/* /////////////MODAL//////////// */}
+                        <button
+                          style={{
+                            fontSize: "0.7rem",
+                            background: "none",
+                            border: "none",
+                            padding: "0",
+                            /*optional*/
+                            fontFamily: "arial, sans-serif",
+                            /*input has OS specific font-family*/
+                            color: "#069",
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            handleClickOpenNew("paper") &&
+                              handleClickOpenIcon();
+                          }}
+                        >
+                          Pair New Device?
+                        </button>
+                        <Dialog
+                          open={openIcon}
+                          onClose={handleCloseNew}
+                          scroll={scroll}
+                          aria-labelledby="scroll-dialog-title"
+                          aria-describedby="scroll-dialog-description"
+                        >
+                          <DialogTitle id="scroll-dialog-title">
+                            Pair New Device
+                          </DialogTitle>
+                          <IconButton
+                            aria-label="close"
+                            onClick={handleCloseIcon}
+                            sx={{
+                              position: "absolute",
+                              right: 8,
+                              top: 8,
+                              color: (theme) => theme.palette.grey[500],
+                            }}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                          <DialogContent dividers={scroll === "paper"}>
+                            <DialogContentText
+                              id="scroll-dialog-description"
+                              ref={descriptionElementRef}
+                              tabIndex={-1}
+                            >
+                              <form>
+                                <input
+                                  style={{ color: "black" }}
+                                  className="input1"
+                                  type="text"
+                                  placeholder="Enter IP Address:Port"
+                                  onChange={(e) => {
+                                    setIpPort(e.target.value);
+                                  }}
+                                />
+                                <input
+                                  style={{ color: "black" }}
+                                  className="input1"
+                                  type="text"
+                                  placeholder="Enter Password"
+                                  onChange={(e) => {
+                                    setPassword(e.target.value);
+                                  }}
+                                />
+                                <button
+                                  className="btn btn-primary"
+                                  onClick={() => {
+                                    window.ipcRenderer.send(
+                                      "run-adb-pair",
+                                      ipPort,
+                                      password
+                                    );
+                                    window.ipcRenderer.on(
+                                      "adb-pair-result",
+                                      function (event, path) {
+                                        console.log("Pairing ", path);
+                                        notify(`Pairing ${path}`);
+                                      }
+                                    );
+                                  }}
+                                >
+                                  Submit
+                                </button>
+                              </form>
+                            </DialogContentText>
+                          </DialogContent>
+                        </Dialog>
+                        {/* ///////////////////////// */}
+                      </div>
                     </div>
-                    <div>
-                      <input
-                        type="text"
-                        className="form-control input1"
-                        // style={{ width: "25%" }}
-                        name="port"
-                        value={port}
-                        placeholder="Enter port (i.e. 5555)"
-                        onChange={(e) => setPort(e.target.value)}
-                      />
-                    </div>
+                    <button
+                      className={`button-10 ${
+                        !(ipAddress.trim() && port.trim()) ? "" : "valid"
+                      }`}
+                      onClick={connectToDevice}
+                      disabled={loading}
+                    >
+                      <span className="button-content-10">
+                        {loading ? "Connecting..." : "Connect"}
+                      </span>
+                    </button>
                   </div>
-                  <button
-                    className={`button-10 ${
-                      !(ipAddress.trim() && port.trim()) ? "" : "valid"
-                    }`}
-                    onClick={connectToDevice}
-                    disabled={loading}
-                  >
-                    <span className="button-content-10">
-                      {loading ? "Connecting..." : "Connect"}
-                    </span>
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="row mb-3">
@@ -429,7 +547,7 @@ const App = () => {
                 </div>
                 <button
                   className="button-10"
-                  style={{ width: "14%", margin: "5px" }}
+                  style={{ width: "16%", margin: "10px" }}
                   onClick={handleDisconnect}
                 >
                   <span className="button-content-10">Disconnect</span>
@@ -570,6 +688,18 @@ const App = () => {
                 aria-describedby="scroll-dialog-description"
               >
                 <DialogTitle id="scroll-dialog-title">Log Analysis</DialogTitle>
+                {/* <IconButton
+                  aria-label="close"
+                  onClick={handleCloseIcon}
+                  sx={{
+                    position: "absolute",
+                    right: 8,
+                    top: 8,
+                    color: (theme) => theme.palette.grey[500],
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton> */}
                 <DialogContent dividers={scroll === "paper"}>
                   <DialogContentText
                     id="scroll-dialog-description"
@@ -582,6 +712,7 @@ const App = () => {
               </Dialog>
               {/* ///////////////////////// */}
             </div>
+            <div></div>
           </div>
           <ToastContainer />
         </div>
