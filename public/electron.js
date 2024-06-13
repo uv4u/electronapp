@@ -58,6 +58,85 @@ ipcMain.on("run-adb-pair", (event, ipPort, password) => {
   });
 });
 
+let recordingProcess;
+
+ipcMain.on("start-screenrecord", (event, device) => {
+  const startScreenRecord = () => {
+    const startCommand = `adb -s ${device} shell screenrecord /sdcard/screenrecord.mp4`;
+    recordingProcess = exec(startCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        event.reply("screenrecord-error");
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
+      event.reply("screenrecord-started");
+    });
+
+    // Handle process termination
+    recordingProcess.on("exit", (code, signal) => {
+      console.log(
+        `Screen recording process on device ${device} terminated with code ${code} and signal ${signal}`
+      );
+      if (code === null) {
+        console.log(
+          `Screen recording process on device ${device} was killed by signal ${signal}`
+        );
+        event.reply(
+          "screenrecord-error",
+          `Screen recording process on device ${device} was killed by signal ${signal}`
+        );
+      }
+    });
+  };
+
+  // Attempt to start recording with default resolution
+  startScreenRecord();
+
+  // If default resolution fails, try lower resolutions
+  // recordingProcess.on("exit", (code, signal) => {
+  //   if (code !== 0) {
+  //     console.log(
+  //       `Default resolution failed on device ${device}. Trying lower resolution.`
+  //     );
+  //     startScreenRecord("640x480"); // Lower resolution
+  //   }
+  // });
+});
+
+ipcMain.on("pull-video", (event, device) => {
+  try {
+    exec(`adb -s ${device} pull /sdcard/screenrecord.mp4 ./screenrecord.mp4`);
+
+    console.log("Video pull successful");
+    event.sender.send("video-pull-success", "./screenrecord.mp4");
+  } catch (error) {
+    console.error("Error pulling video:", error);
+    event.sender.send("video-pull-error", error);
+  }
+});
+
+ipcMain.on("stop-screenrecord", (event, device) => {
+  if (recordingProcess) {
+    exec(
+      `adb -s ${device} shell pkill -SIGINT screenrecord`,
+      (stopError, stopStdout, stopStderr) => {
+        if (stopError) {
+          console.error(`exec error: ${stopError}`);
+          event.reply(
+            "screenrecord-error",
+            `Error stopping screen recording: ${stopError.message}`
+          );
+          return;
+        }
+        console.log(`stdout: ${stopStdout}`);
+        console.log(`stderr: ${stopStderr}`);
+      }
+    );
+  }
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1920,
@@ -69,6 +148,8 @@ function createWindow() {
     },
     icon: "",
   });
+  mainWindow.maximize();
+  mainWindow.setMenuBarVisibility(false);
 
   mainWindow.loadURL("http://localhost:3001"); // Assuming your server runs on port 3000
   mainWindow.loadURL(

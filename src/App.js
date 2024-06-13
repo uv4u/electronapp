@@ -5,6 +5,7 @@ import "./modalcss.scss";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import androdebug from "./androdebug.png";
+import Navbar from "./Navbar";
 
 // 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 api key
 
@@ -18,6 +19,13 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import ScreenshotMonitorIcon from "@mui/icons-material/ScreenshotMonitor";
+import { Tooltip } from "@mui/material";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import StopCircleIcon from "@mui/icons-material/StopCircle";
+import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
+import TvIcon from "@mui/icons-material/Tv";
+import DownloadIcon from "@mui/icons-material/Download";
 
 const Groq = require("groq-sdk");
 const groq = new Groq({
@@ -318,23 +326,35 @@ const App = () => {
     setOpenIcon(false);
   };
 
+  const startScreenRecording = () => {
+    console.log(`--------------${disconnectId}`);
+    if (disconnectId) {
+      notify("Screen Recording Started");
+    }
+    window.ipcRenderer.send("start-screenrecord", disconnectId);
+    window.ipcRenderer.once("screenrecord-started", (event, message) => {
+      console.log(message);
+    });
+
+    // window.ipcRenderer.on("video-pull-success", (event, videopath) => {
+    //   console.log(videopath);
+    //   const link = document.createElement("a");
+    //   link.href = videopath; // Adjust the path if necessary
+    //   link.download = "screenrecord.mp4";
+    //   document.body.appendChild(link);
+    //   link.click();
+    //   document.body.removeChild(link);
+    // });
+
+    window.ipcRenderer.once("screenrecord-error", (event, message) => {
+      console.error(message);
+      notify(`Error: Please select a device`);
+    });
+  };
+
   return (
     <div>
-      <nav className="navbar" style={{ background: "#3559E0", height: 58 }}>
-        <div className="container-fluid">
-          <span
-            className="navbar-fixed-top navbar-brand h1"
-            style={{ color: "#EEEDEB", fontFamily: "Apple Color Emoji" }}
-          >
-            <img
-              src={androdebug}
-              style={{ height: "2.1em", width: "auto" }}
-            ></img>
-            {/* <b>ADBWeb</b> */}
-          </span>
-        </div>
-      </nav>
-
+      <Navbar />
       <div
         className="container-sm d-flex align-items-center"
         style={{ padding: 50, gap: "100px" }}
@@ -518,9 +538,13 @@ const App = () => {
                       style={{ gap: 20 }}
                       readOnly
                     >
-                      <div className="d-flex">
+                      <div className="d-flex gap">
                         {deviceId.map((item, index) => (
-                          <div className="d-flex flex-wrap" key={index}>
+                          <div
+                            className="d-flex align-items-center"
+                            style={{ gap: 4 }}
+                            key={index}
+                          >
                             <div class="input-group">
                               <input
                                 class="form-check-input mt-0"
@@ -533,27 +557,31 @@ const App = () => {
                                 }
                               />
                             </div>
-                            {item.id}
-                            <span
-                              style={{ color: "#34ff4a", padding: "0 5px" }}
-                            >
-                              ●
-                            </span>
+                            <div>{item.id}</div>
+                            {item.id.length === 19 ? (
+                              <div>
+                                <TvIcon />
+                              </div>
+                            ) : (
+                              <div>
+                                <PhoneAndroidIcon fontSize="medium" />
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
+                      <button
+                        className="button-10"
+                        style={{ width: "16%", margin: "10px" }}
+                        onClick={handleDisconnect}
+                      >
+                        <span className="button-content-10">Disconnect</span>
+                      </button>
                     </div>
                   ) : (
                     <h6>No device connected</h6>
                   )}
                 </div>
-                <button
-                  className="button-10"
-                  style={{ width: "16%", margin: "10px" }}
-                  onClick={handleDisconnect}
-                >
-                  <span className="button-content-10">Disconnect</span>
-                </button>
               </div>
               <label htmlFor="apkPath" className="form-label">
                 <h6>APK Path:</h6>
@@ -649,72 +677,132 @@ const App = () => {
                 ></textarea>
               )}
             </div>
-            <div className="d-flex" style={{ gap: 20 }}>
-              <button className="button-10" onClick={handleFetchLogs}>
-                {/* FETCH */}
-                <span className="button-content-10">Fetch Logs</span>
-              </button>
-              <button
-                className={`button-10`}
-                disabled={!logs.length}
-                onClick={eraseText}
-              >
-                <span className="button-content-10">Clear</span>
-              </button>
-
-              <button
-                className={`button-10`}
-                onClick={handleExportLogs}
-                disabled={!logs.length}
-              >
-                <span className="button-content-10">Save Logs</span>
-              </button>
-
-              <button className={`button-10`} onClick={handleScreenCap}>
-                <span className="button-content-10">Screenshot</span>
-              </button>
-
-              {/* /////////////MODAL//////////// */}
-              <button
-                className="button-10"
-                onClick={handleClickOpen("paper")}
-                disabled={!logs.length}
-              >
-                <span className="button-content-10">Analyse Logs</span>
-              </button>
-              <Dialog
-                open={open}
-                onClose={handleClose}
-                scroll={scroll}
-                aria-labelledby="scroll-dialog-title"
-                aria-describedby="scroll-dialog-description"
-              >
-                <DialogTitle id="scroll-dialog-title">Log Analysis</DialogTitle>
-                {/* <IconButton
-                  aria-label="close"
-                  onClick={handleCloseIcon}
-                  sx={{
-                    position: "absolute",
-                    right: 8,
-                    top: 8,
-                    color: (theme) => theme.palette.grey[500],
-                  }}
+            <div className="d-flex justify-content-between">
+              <div className="d-flex" style={{ gap: 20 }}>
+                <button className="button-10" onClick={handleFetchLogs}>
+                  <span className="button-content-10">Fetch Logs</span>
+                </button>
+                <button
+                  className={`button-10`}
+                  disabled={!logs.length}
+                  onClick={eraseText}
                 >
-                  <CloseIcon />
-                </IconButton> */}
-                <DialogContent dividers={scroll === "paper"}>
-                  <DialogContentText
-                    id="scroll-dialog-description"
-                    ref={descriptionElementRef}
-                    tabIndex={-1}
+                  <span className="button-content-10">Clear</span>
+                </button>
+
+                <button
+                  className={`button-10`}
+                  onClick={handleExportLogs}
+                  disabled={!logs.length}
+                >
+                  <span className="button-content-10">Save Logs</span>
+                </button>
+                {/* /////////////MODAL//////////// */}
+                <button
+                  className="button-10"
+                  onClick={handleClickOpen("paper")}
+                  disabled={!logs.length}
+                >
+                  <span className="button-content-10">Analyse Logs</span>
+                </button>
+                <Dialog
+                  open={open}
+                  onClose={handleClose}
+                  scroll={scroll}
+                  aria-labelledby="scroll-dialog-title"
+                  aria-describedby="scroll-dialog-description"
+                >
+                  <DialogTitle id="scroll-dialog-title">
+                    Log Analysis
+                  </DialogTitle>
+                  <IconButton
+                    aria-label="close"
+                    onClick={handleCloseIcon}
+                    sx={{
+                      position: "absolute",
+                      right: 8,
+                      top: 8,
+                      color: (theme) => theme.palette.grey[500],
+                    }}
                   >
-                    <p>{analysedLog}</p>
-                  </DialogContentText>
-                </DialogContent>
-              </Dialog>
-              {/* ///////////////////////// */}
+                    <CloseIcon />
+                  </IconButton>
+                  <DialogContent dividers={scroll === "paper"}>
+                    <DialogContentText
+                      id="scroll-dialog-description"
+                      ref={descriptionElementRef}
+                      tabIndex={-1}
+                    >
+                      <p>{analysedLog}</p>
+                    </DialogContentText>
+                  </DialogContent>
+                </Dialog>
+
+                {/* ///////////////////////// */}
+              </div>
+              <div>
+                <div className="d-flex flex-column">
+                  <Tooltip
+                    title="Take a Screenshot"
+                    leaveTouchDelay="10"
+                    placement="right"
+                  >
+                    <IconButton color="primary">
+                      <ScreenshotMonitorIcon
+                        fontSize="medium"
+                        color="primary"
+                        onClick={handleScreenCap}
+                      />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Start Recording Video" placement="right">
+                    <IconButton color="primary">
+                      <PlayCircleOutlineIcon
+                        fontSize="medium"
+                        color="primary"
+                        onClick={startScreenRecording}
+                      />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Stop Recording Video" placement="right">
+                    <IconButton color="primary">
+                      <StopCircleIcon
+                        fontSize="medium"
+                        color="primary"
+                        onClick={() => {
+                          window.ipcRenderer.send(
+                            "stop-screenrecord",
+                            disconnectId
+                          );
+                          notify("Screen Recording Ended");
+                        }}
+                      />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Pull Video" placement="right">
+                    <IconButton color="primary">
+                      <DownloadIcon
+                        fontSize="medium"
+                        color="primary"
+                        onClick={() => {
+                          window.ipcRenderer.send("pull-video", disconnectId);
+                          window.ipcRenderer.once(
+                            "video-pull-success",
+                            (event, message) => {
+                              console.log(message);
+                              notify("Video Pulled Successfully");
+                            }
+                          );
+                        }}
+                      />
+                    </IconButton>
+                  </Tooltip>
+                </div>
+              </div>
             </div>
-            <div></div>
           </div>
           <ToastContainer />
         </div>

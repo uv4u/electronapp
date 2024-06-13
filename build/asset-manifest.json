@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "./static/css/main.9c3e933e.css",
-    "main.js": "./static/js/main.857612e4.js",
+    "main.css": "./static/css/main.737440f8.css",
+    "main.js": "./static/js/main.924fd96e.js",
     "static/js/919.9b383752.chunk.js": "./static/js/919.9b383752.chunk.js",
     "static/media/androdebug.png": "./static/media/androdebug.4f6b4764e397346c87c3.png",
     "index.html": "./index.html",
-    "main.9c3e933e.css.map": "./static/css/main.9c3e933e.css.map",
-    "main.857612e4.js.map": "./static/js/main.857612e4.js.map",
+    "main.737440f8.css.map": "./static/css/main.737440f8.css.map",
+    "main.924fd96e.js.map": "./static/js/main.924fd96e.js.map",
     "919.9b383752.chunk.js.map": "./static/js/919.9b383752.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.9c3e933e.css",
-    "static/js/main.857612e4.js"
+    "static/css/main.737440f8.css",
+    "static/js/main.924fd96e.js"
   ]
 }

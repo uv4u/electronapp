@@ -32,7 +32,9 @@ const getDeviceID = async () => {
   try {
     const devices = await client.listDevices();
     if (devices.length > 0) {
-      return devices[0].id;
+      // console.log(devices);
+      return devices;
+      // return devices[0].id;
     }
     return null;
   } catch (error) {
@@ -97,10 +99,9 @@ app.post("/disconnect", async (req, res) => {
   try {
     const deviceID = await getDeviceID();
     if (deviceID) {
-      console.log("///////////////", typeof deviceID);
-      // Ensure that the client is initialized before attempting to call disconnect
       if (client) {
-        const device = await client.disconnect(deviceID, "5555");
+        console.log(req.body);
+        const device = await client.disconnect(req.body.ipAddress, 5555);
         console.log("Disconnected");
         // console.log(device);
         // res.status(200).json({ device });
@@ -184,39 +185,35 @@ app.get("/device-logs", async (req, res) => {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function getFileName(fullPath) {
+  // Replace all backslashes with forward slashes to handle escaping issues
+  fullPath = fullPath.replace(/\\/g, "/");
+
+  // Split the string by the forward slash and get the last part
+  const parts = fullPath.split("/");
+  const fileName = parts[parts.length - 1];
+
+  return fileName;
+}
+
 //INSTALL PART
 app.get("/install-apk", async (req, res) => {
-  // console.log(req);
-  console.log(req.query);
-  // console.log(req.query.apk);
-  // res.status(req);
-  const devices = await client.listDevices();
-
-  if (devices.length === 0) {
-    res.status(404).json({ error: "No devices connected" });
-
-    return;
-  }
-
-  const apk = req.query.apkPath;
-  if (!apk) {
-    res.status(400).json({ error: "Missing APK path" });
-    return;
-  }
-
   try {
     const devices = await client.listDevices();
-    const device = devices[0];
-    // for (let x in devices.length) {
-    //   await client.install(x.id, apk);
-    //   console.log(`Installed ${apk} on device ${x.id}`);
-    //   res.send(`Installed ${apk} on device ${x.id}`);
-    // }
 
-    await client.install(device.id, apk);
+    if (devices.length === 0) {
+      res.status(404).json({ error: "No devices connected" });
+      return;
+    }
+    const apk = req.query.apkPath;
+    const file_name = getFileName(apk);
 
-    console.log(`Installed ${apk} on device ${device.id}`);
-    res.send(`Installed ${apk} on device ${device.id}`);
+    for (let i = 0; i < devices.length; i++) {
+      console.log(devices[i].id);
+      await client.install(devices[i].id, apk);
+      console.log(`Installed ${file_name} on device ${devices[i].id}`);
+    }
+    res.send(`Installed ${file_name} Successfully`);
   } catch (err) {
     console.error("Lost Connection with Device", err.stack);
     res.status(500).json({ error: "Lost Connection with Device" });
@@ -256,6 +253,7 @@ app.post("/export-logs", (req, res) => {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const sendDeviceIDUpdate = async (res) => {
   const deviceID = await getDeviceID(); // Get the current device ID
+  // console.log(deviceID);
   res.write(`data: ${JSON.stringify({ deviceID })}\n\n`); // Send SSE event with device ID
 };
 
@@ -279,6 +277,38 @@ app.get("/device-id-stream", (req, res) => {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+app.post("/screencap", async (req, res) => {
+  try {
+    // const devices = await client.listDevices();
+    // const device = devices[0].id;
+
+    console.log(req.body);
+    const screenCap = await client.screencap(req.body.ipAddress);
+    // const screenCap = await client.screencap(devices[1].id);
+
+    // Set headers to indicate a file attachment and its type
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="screenshot.png"'
+    );
+    res.setHeader("Content-Type", "image/png");
+
+    // Pipe the screencap stream directly to the response
+    screenCap
+      .pipe(res)
+      .on("finish", () => {
+        console.log("Screenshot sent as response");
+      })
+      .on("error", (err) => {
+        console.error("Error while streaming screenshot:", err);
+        res.status(500).send("Failed to capture screenshot");
+      });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to capture screenshot");
+  }
+});
 
 app.listen(3001, () => {
   console.log("App listening on port 3001!");

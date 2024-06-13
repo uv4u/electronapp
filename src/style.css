@@ -33,6 +33,7 @@ body{
   font-family: Inter,Helvetica,"Apple Color Emoji","Segoe UI Emoji",NotoColorEmoji,"Noto Color Emoji","Segoe UI Symbol","Android Emoji",EmojiSymbols,-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",sans-serif;
   overflow: hidden;
   height: 2rem;
+  width: 350;
   padding: 0 1rem;
   border-radius: 1.5rem;
   /* background: #3d3a4e; */
@@ -103,3 +104,7 @@ body{
   display: block;
   height: 100%;
 } 
+
+.gap{
+  gap:16px
+}
